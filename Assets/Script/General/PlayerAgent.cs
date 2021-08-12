@@ -10,7 +10,7 @@ using UnityEngine.AI;
 using Random = UnityEngine.Random;
 
 [RequireComponent(typeof(NavMeshAgent))]
-public class PlayerAgent : MonoBehaviour
+public class PlayerAgent : MonoBehaviour, IGetNavAgentTargets, IGetNavAgentEvadeTarget, ISetAsEvadeTarget
 {
     public Renderer renderer;
     
@@ -63,6 +63,7 @@ public class PlayerAgent : MonoBehaviour
 
     public void SetMaterial(bool isEnemy) => renderer.material = isEnemy ? normalMaterial : monsterMaterial;
 
+    public bool IsMonster() => Monster == this;
     void SetNormal()
     {
         if(Monster == this) Monster = null;
@@ -82,6 +83,17 @@ public class PlayerAgent : MonoBehaviour
         name = $"Monster {name}";
         _navMeshAgent.destination = transform.position;
         _navMeshAgent.velocity = Vector3.zero;
+    }
+
+    public IReadOnlyList<Transform> Get() => Victims;
+    Transform IGetNavAgentEvadeTarget.Get() => Monster.transform;
+
+    public void Set(bool value)
+    {
+        if (value)
+            SetAsMonster();
+        else 
+            SetNormal();
     }
 }
 
@@ -320,8 +332,7 @@ public class EvadeWalkNavMeshNode : BehaviourNode
     
     private static Vector2 RadianToVector2(float radian)=> new Vector2(Mathf.Cos(radian), Mathf.Sin(radian));
     
-        protected override Result Execution()
-
+    protected override Result Execution()
     {
         if (!_started)
         {
